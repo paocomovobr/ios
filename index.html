@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Consulta de Preço — Feira do Livro</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#f6f4ef">
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Consulta Preço">
+<style>
+  :root{
+    --paper:#f6f4ef;
+    --card:#ffffff;
+    --ink:#1c1a17;
+    --muted:#8a8378;
+    --line:#e4dfd3;
+    --accent:#1c1a17;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  svg.icon{ width:1em; height:1em; display:inline-block; vertical-align:-0.15em; }
+  .icon{ stroke:currentColor; fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  .icon.filled{ fill:currentColor; stroke:none; }
+
+  .masthead{
+    width:100%;
+    max-width:520px;
+    padding:20px 20px 16px;
+  }
+  .masthead-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding-bottom:16px;
+    border-bottom:1px solid var(--line);
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .brand .icon{ width:26px; height:26px; }
+  .brand-logo{ height:32px; width:auto; display:block; }
+  .brand-text b{
+    display:block;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size:19px;
+    letter-spacing:2px;
+  }
+  .brand-text span{
+    display:block;
+    font-size:9px;
+    letter-spacing:2px;
+    color:var(--muted);
+    margin-top:1px;
+  }
+  #btn-menu{
+    background:none;
+    border:none;
+    padding:4px;
+    color:var(--ink);
+    flex:0 0 auto;
+  }
+  #btn-menu .icon{ width:22px; height:22px; }
+
+  .masthead h1{
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size:32px;
+    letter-spacing:0.2px;
+    margin:22px 0 0;
+    font-weight:700;
+    text-align:center;
+  }
+  .masthead p{
+    margin:10px 0 0;
+    font-size:14px;
+    line-height:1.5;
+    color:var(--muted);
+    text-align:center;
+  }
+
+  .masthead .manual{ margin-top:18px; }
+  .masthead .status{ margin-top:10px; }
+
+  .menu-panel{
+    width:100%;
+    max-width:520px;
+    padding:0 20px;
+  }
+  .menu-panel[hidden]{ display:none; }
+  .menu-card{
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:var(--card);
+    padding:14px 16px;
+    margin-bottom:4px;
+  }
+  .file-status{
+    font-size:12.5px;
+    color:#3d3729;
+    margin-bottom:10px;
+    line-height:1.4;
+  }
+
+  .stage{
+    width:100%;
+    max-width:520px;
+    padding:14px 20px 40px;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  #reader-wrap{
+    position:relative;
+    border-radius:20px;
+    background:#000;
+    aspect-ratio: 16/7;
+    overflow:hidden;
+  }
+  #reader{ width:100%; height:100%; }
+  #reader video{
+    width:100% !important;
+    height:100% !important;
+    object-fit:cover;
+  }
+  .scan-frame{
+    position:absolute;
+    inset:12% 5%;
+    pointer-events:none;
+  }
+  .scan-frame i{
+    position:absolute;
+    width:26px;
+    height:26px;
+    border:2.5px solid #fff;
+    opacity:0.9;
+    transition: border-color 0.12s ease;
+  }
+  .scan-frame i:nth-child(1){ top:0; left:0; border-right:none; border-bottom:none; border-top-left-radius:6px; }
+  .scan-frame i:nth-child(2){ top:0; right:0; border-left:none; border-bottom:none; border-top-right-radius:6px; }
+  .scan-frame i:nth-child(3){ bottom:0; left:0; border-right:none; border-top:none; border-bottom-left-radius:6px; }
+  .scan-frame i:nth-child(4){ bottom:0; right:0; border-left:none; border-top:none; border-bottom-right-radius:6px; }
+  .scan-frame.success i{ border-color:#3ecf5e; }
+  .scan-frame.success{ animation: scanFlash 0.5s ease; }
+  @keyframes scanFlash{
+    0%{ filter:drop-shadow(0 0 0 rgba(62,207,94,0)); }
+    30%{ filter:drop-shadow(0 0 6px rgba(62,207,94,0.9)); }
+    100%{ filter:drop-shadow(0 0 0 rgba(62,207,94,0)); }
+  }
+
+  .cam-overlay-btn{
+    position:absolute;
+    bottom:8px;
+    width:34px; height:34px;
+    border-radius:50%;
+    background:rgba(20,18,16,0.55);
+    backdrop-filter:blur(2px);
+    border:none;
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+  }
+  .cam-overlay-btn .icon{ width:16px; height:16px; }
+  #btn-flip{ left:8px; }
+  #btn-torch{ right:8px; }
+  #btn-torch.active{ background:#e8b93f; color:#1c1a17; }
+  #btn-refocus{ top:8px; bottom:auto; left:50%; transform:translateX(-50%); }
+  #btn-refocus.spinning .icon{ animation: refocusSpin 0.6s linear; }
+  @keyframes refocusSpin{ from{ transform:rotate(0deg); } to{ transform:rotate(180deg); } }
+  .ios-focus-tip{
+    position:absolute; left:50%; bottom:8px; transform:translateX(-50%);
+    max-width:88%; text-align:center;
+    font-size:11px; line-height:1.3; color:#fff;
+    background:rgba(20,18,16,0.55); backdrop-filter:blur(2px);
+    padding:5px 10px; border-radius:10px; pointer-events:none;
+  }
+
+  .camera-card{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:11px 14px;
+    background:var(--card);
+  }
+  .camera-card .icon{ width:19px; height:19px; flex:0 0 auto; color:var(--ink); }
+  .camera-card .cam-field{
+    flex:1;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+  }
+  .camera-card .cam-label{
+    font-size:10px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .camera-card select{
+    appearance:none;
+    -webkit-appearance:none;
+    border:none;
+    background:transparent;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size:15px;
+    color:var(--ink);
+    padding:0;
+    width:100%;
+    text-overflow:ellipsis;
+  }
+  .camera-card .chevron{ flex:0 0 auto; width:16px; height:16px; color:var(--muted); pointer-events:none; }
+
+  .btnrow{ display:flex; gap:10px; }
+  button{
+    font-family:inherit;
+    font-size:14.5px;
+    font-weight:600;
+    padding:14px 16px;
+    background:var(--ink);
+    color:#fff;
+    border:1px solid var(--ink);
+    border-radius:14px;
+    cursor:pointer;
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+  }
+  button .icon{ width:17px; height:17px; }
+  button.secondary{
+    background:var(--card);
+    color:var(--ink);
+    border:1px solid var(--line);
+  }
+  button.link{
+    background:none;
+    border:none;
+    color:var(--ink);
+    text-decoration:underline;
+    padding:6px 2px;
+    flex:0 0 auto;
+    font-weight:500;
+  }
+  button:active{ transform:translateY(1px); }
+
+  .manual{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:var(--card);
+    padding:2px 6px 2px 14px;
+  }
+  .manual .icon{ width:17px; height:17px; color:var(--muted); flex:0 0 auto; }
+  .manual input{
+    flex:1;
+    min-width:0;
+    font-family:inherit;
+    font-size:15px;
+    padding:12px 6px;
+    border:none;
+    background:transparent;
+    color:var(--ink);
+  }
+  .manual input::placeholder{ color:var(--muted); }
+  .manual button{
+    flex:0 0 auto;
+    padding:11px 18px;
+    border-radius:11px;
+  }
+
+  .status{
+    font-size:12.5px;
+    text-align:center;
+    color:var(--muted);
+    min-height:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+  }
+  .status .dot{
+    width:6px; height:6px; border-radius:50%;
+    background:var(--muted);
+    flex:0 0 auto;
+  }
+  #file-input{ display:none; }
+
+  .result{
+    border:1px solid var(--line);
+    border-radius:16px;
+    background:var(--card);
+    padding:0;
+    min-height:150px;
+    position:relative;
+  }
+  .result .stamp-corner{
+    position:absolute;
+    top:14px; right:14px;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.5px;
+    color:#fff;
+    background:var(--ink);
+    border-radius:20px;
+    padding:4px 10px;
+  }
+  .result-body{ padding:22px; }
+  .result-top{
+    display:flex;
+    gap:14px;
+    margin-bottom:2px;
+  }
+  .book-thumb{
+    width:56px;
+    height:80px;
+    flex:none;
+    border-radius:6px;
+    border:1px solid var(--line);
+    background:var(--paper);
+    object-fit:cover;
+  }
+  .result-info{ min-width:0; flex:1; }
+  .result-info .book-title{ padding-right:56px; }
+  .result .empty{
+    padding:40px 20px;
+    text-align:center;
+    color:var(--muted);
+  }
+  .result .empty .icon{
+    width:34px; height:34px;
+    margin-bottom:12px;
+    color:var(--ink);
+  }
+  .result .empty b{
+    display:block;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size:17px;
+    color:var(--ink);
+    margin-bottom:5px;
+    font-weight:700;
+  }
+  .result .empty p{ margin:0; font-size:13px; }
+  .book-title{
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size:20px;
+    line-height:1.3;
+    margin:0 0 4px;
+    padding-right:70px;
+  }
+  .book-sub{
+    font-size:12.5px;
+    color:var(--muted);
+    margin:0 0 10px;
+    font-style:italic;
+  }
+  .book-author{
+    font-size:12px;
+    color:var(--muted);
+    margin:0 0 16px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+  .price-row{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    border-top:1px solid var(--line);
+    padding-top:14px;
+  }
+  .price-old{
+    font-size:14px;
+    color:var(--muted);
+    text-decoration:line-through;
+  }
+  .price-new{
+    font-size:30px;
+    font-weight:700;
+    color:var(--ink);
+  }
+  .price-tag{
+    font-size:11px;
+    color:var(--muted);
+    margin-left:auto;
+    text-align:right;
+    line-height:1.4;
+  }
+  .not-found{
+    padding:36px 20px;
+    text-align:center;
+  }
+  .not-found .code{
+    font-size:13px;
+    color:var(--muted);
+    margin-top:6px;
+  }
+
+  .title-results{ padding:6px 0; }
+  .title-results .hint{
+    padding:10px 16px 2px;
+    font-size:11.5px;
+    color:var(--muted);
+  }
+  .search-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    width:100%;
+    padding:12px 16px;
+    border:none;
+    border-bottom:1px solid var(--line);
+    background:none;
+    font-family:inherit;
+    text-align:left;
+    color:inherit;
+  }
+  .search-item:last-child{ border-bottom:none; }
+  .search-item:active{ background:var(--paper); }
+  .search-item .book-thumb{ width:38px; height:54px; }
+  .search-item .si-info{ min-width:0; flex:1; }
+  .search-item .si-title{
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size:14.5px;
+    line-height:1.25;
+    margin:0 0 2px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .search-item .si-author{
+    font-size:10.5px;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.3px;
+    margin:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .search-item .si-price{
+    font-size:14px;
+    font-weight:700;
+    flex:none;
+  }
+  .resumo{
+    border-top:1px solid var(--line);
+    margin-top:14px;
+    padding-top:12px;
+    font-size:12.5px;
+    line-height:1.55;
+    color:#3d3729;
+  }
+  .resumo .resumo-label{
+    display:block;
+    font-size:10px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:5px;
+    font-weight:600;
+  }
+  .footer{
+    width:100%;
+    max-width:520px;
+    padding:6px 20px 30px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .footer .line{ flex:1; height:1px; background:var(--line); }
+  .footer span{
+    font-size:10px;
+    letter-spacing:2px;
+    color:var(--muted);
+    white-space:nowrap;
+  }
+
+  /* --- Login admin --- */
+  .admin-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(28,26,23,0.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:50;
+  }
+  .admin-overlay[hidden]{ display:none; }
+  .admin-modal{
+    background:var(--card);
+    border-radius:16px;
+    padding:22px 20px;
+    width:100%;
+    max-width:340px;
+  }
+  .admin-title{
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size:17px;
+    margin:0 0 14px;
+    text-align:center;
+  }
+  .admin-modal .manual{ margin-bottom:12px; }
+  .admin-error{
+    color:#b3261e;
+    font-size:12.5px;
+    margin:10px 0 0;
+    text-align:center;
+  }
+  .admin-error[hidden]{ display:none; }
+  #btn-logout-admin{ margin-bottom:10px; }
+</style>
+</head>
+<body>
+
+<div class="admin-overlay" id="admin-overlay" hidden>
+  <div class="admin-modal">
+    <p class="admin-title">Acesso restrito</p>
+    <p style="font-size:12.5px; color:var(--muted); text-align:center; margin:-4px 0 14px;">Digite a senha para usar o app.</p>
+    <div class="manual">
+      <svg class="icon" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      <input type="password" id="admin-password" placeholder="Senha" autocomplete="off">
+    </div>
+    <div class="btnrow">
+      <button id="btn-admin-cancel" class="secondary">Cancelar</button>
+      <button id="btn-admin-confirm">Entrar</button>
+    </div>
+    <p class="admin-error" id="admin-error" hidden>Senha incorreta.</p>
+  </div>
+</div>
+
+<div id="app-content" hidden>
+
+<div class="masthead">
+  <div class="masthead-top">
+    <div class="brand">
+      <img class="brand-logo" src="logo-icon.png" alt="Citadel Grupo Editorial">
+      <div class="brand-text">
+        <b>CITADEL</b>
+        <span>GRUPO EDITORIAL</span>
+      </div>
+    </div>
+    <button id="btn-menu" aria-expanded="false" aria-controls="menu-panel">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+  </div>
+  <h1>Consulta de Preço</h1>
+  <p>Digite o nome do livro ou o código de barras / ISBN para consultar o preço.</p>
+
+  <div class="manual">
+    <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    <input id="manual-title" type="text" placeholder="Ou digite o nome do livro">
+    <button id="btn-search-title">Buscar</button>
+  </div>
+
+  <div class="manual">
+    <svg class="icon" viewBox="0 0 24 24"><path d="M4 5v14M7.5 5v14M10 5v14M13.5 5v14M16 5v10M19.5 5v14"/></svg>
+    <input id="manual-code" type="text" inputmode="numeric" placeholder="Ou digite o código de barras / ISBN">
+    <button id="btn-manual">Buscar</button>
+  </div>
+
+  <div class="status" id="status"><span class="dot"></span><span id="status-text"></span></div>
+</div>
+
+<div class="menu-panel" id="menu-panel" hidden>
+  <button id="btn-logout-admin" class="secondary" style="display:none;">Sair do modo admin</button>
+  <div class="menu-card">
+    <div class="file-status" id="file-status">Carregando…</div>
+    <div class="btnrow">
+      <button id="btn-load-file" class="secondary">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 6.5a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>
+        Carregar remessa
+      </button>
+      <button id="btn-remove-file" class="secondary" style="display:none;">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+        Remover
+      </button>
+    </div>
+  </div>
+  <div class="menu-card">
+    <div class="file-status" id="resumos-status">Carregando…</div>
+    <div class="btnrow">
+      <button id="btn-load-resumos" class="secondary">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 6.5a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>
+        Carregar resumos
+      </button>
+      <button id="btn-remove-resumos" class="secondary" style="display:none;">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+        Remover
+      </button>
+    </div>
+  </div>
+  <div class="menu-card">
+    <div class="file-status">Diagnóstico (o que está salvo agora no celular)</div>
+    <button id="btn-debug" class="secondary">Ver dados salvos</button>
+    <pre id="debug-output" style="display:none; white-space:pre-wrap; word-break:break-word; font-size:11px; margin-top:10px; max-height:220px; overflow:auto; background:var(--paper); border-radius:10px; padding:10px;"></pre>
+  </div>
+</div>
+<input type="file" id="remessa-file-input" accept=".json,application/json" style="display:none">
+<input type="file" id="resumos-file-input" accept=".json,application/json" style="display:none">
+
+
+<div class="stage">
+
+
+  <div class="result" id="result">
+    <div class="empty">
+      <img class="icon" src="logo-icon.png" alt="" style="width:34px;height:auto;margin-bottom:12px;">
+      <b>Nenhum código lido ainda.</b>
+      <p>O resultado do livro aparecerá aqui.</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <div class="line"></div>
+  <span>CITADEL GRUPO EDITORIAL</span>
+  <div class="line"></div>
+</div>
+
+</div><!-- fim de #app-content -->
+
+<script>
+const CATALOGO_PADRAO = {"9788568014004":{"t":"Mais Esperto que o Diabo","s":"","a":"NAPOLEON HILL","g":"Auto-ajuda","p":49.9,"pl":29.94,"d":40,"q":50},"9788568014264":{"t":"O Manuscrito Original","s":"","a":"NAPOLEON HILL","g":"Auto-ajuda","p":89.9,"pl":53.94,"d":40,"q":5},"9788568014547":{"t":"Quem Pensa Enriquece - O Legado","s":"","a":"NAPOLEON HILL","g":"Auto-ajuda","p":51.9,"pl":31.14,"d":40,"q":20},"9788568014325":{"t":"Quebrando O Habito De Ser Voce Mesmo","s":"","a":"DR. JOE DISPENZA","g":"Auto-ajuda","p":51.9,"pl":31.14,"d":40,"q":20},"9788568014639":{"t":"Penso E Acontece","s":"","a":"BOB PROCTOR","g":"","p":59.9,"pl":35.94,"d":40,"q":5},"9788568014455":{"t":"Em Busca De Nos Mesmos","s":"","a":"CLOVIS DE BARROS FILHO (Autor)","g":"","p":51.9,"pl":31.14,"d":40,"q":5},"9786587885049":{"t":"Um Dia Sem Reclamar","s":"","a":"MARCELO CAMPOS GALUPPO (autor)","g":"Auto-ajuda","p":49.9,"pl":29.94,"d":40,"q":10},"9786587885001":{"t":"Quem Pensa Enriquece – A Edição Oficial E Original De 1937","s":"","a":"NAPOLEON HILL","g":"","p":51.9,"pl":31.14,"d":40,"q":10},"9786550470302":{"t":"Pense Como Um Imperador","s":"","a":"DONALD ROBERTSON","g":"","p":56.9,"pl":34.14,"d":40,"q":5},"9786587885100":{"t":"Kit Luxo Pockets  - Napoleon Hill Diamantes De Bolso","s":"","a":"NAPOLEON HILL","g":"Humanidades","p":99.9,"pl":59.94,"d":40,"q":10},"9786550470517":{"t":"Como Se Tornar Sobrenatural","s":"","a":"DR. JOE DISPENZA","g":"Auto-ajuda","p":57.9,"pl":34.74,"d":40,"q":20},"9786587885308":{"t":"Anne De Green Gables","s":"","a":"Lucy Maud Montgomery","g":"","p":49.9,"pl":29.94,"d":40,"q":10},"9786587885315":{"t":"Anne De Avonlea","s":"","a":"Lucy Maud Montgomery","g":"","p":49.9,"pl":29.94,"d":40,"q":5},"9786587885322":{"t":"Anne Da Ilha","s":"","a":"Lucy Maud Montgomery","g":"","p":49.9,"pl":29.94,"d":40,"q":5},"9786587885513":{"t":"Razão E Sensibilidade","s":"","a":"Jane Austen","g":"","p":46.9,"pl":28.14,"d":40,"q":10},"9786550471361":{"t":"Por Que Seu Filho Não Aprende Matematica","s":"","a":"ANDRE SANTOLERI VILLA BARBEIRO","g":"","p":54.9,"pl":32.94,"d":40,"q":5},"9786587885643":{"t":"Persuasão","s":"","a":"Jane Austen","g":"","p":46.9,"pl":28.14,"d":40,"q":10},"9786550471354":{"t":"Orgulho E Preconceito","s":"","a":"Jane Austen","g":"","p":46.9,"pl":28.14,"d":40,"q":10},"9786550471255":{"t":"OBSESSÃO PELO CLIENTE","s":"Working Backwards","a":"St. Martins Press LLC","g":"Auto-ajuda","p":68.9,"pl":41.34,"d":40,"q":10},"9786550471378":{"t":"O Senhor Da Chuva","s":"","a":"ANDRE VIANCO PRODUÇOES ","g":"","p":54.9,"pl":32.94,"d":40,"q":10},"9786587885537":{"t":"O Morro Dos Ventos Uivantes","s":"","a":"EMILY BRONTE","g":"","p":44.9,"pl":26.94,"d":40,"q":5},"9786587885339":{"t":"Meditações","s":"","a":"MARCO AURELIO","g":"","p":54.9,"pl":32.94,"d":40,"q":10},"9786587885346":{"t":"George Orwel 1984 + A Revolução Dos Bichos","s":"","a":"GEORGE ORWELL","g":"","p":64.9,"pl":38.94,"d":40,"q":20},"9786550471408":{"t":"Epaminondas","s":"O Gato Explicador","a":"CLOVIS DE BARROS FILHO (Autor)","g":"","p":56.9,"pl":34.14,"d":40,"q":5},"9786550471415":{"t":"Em Mim Basta","s":":  O Poder De Pular Fora Quando Nada Mais Faz Sentido","a":"WILLIAM SANCHES DE LIMA (Autor)","g":"Auto-ajuda","p":54.9,"pl":32.94,"d":40,"q":5},"9786550471071":{"t":"Bento","s":"","a":"ANDRE VIANCO PRODUÇOES ","g":"","p":54.9,"pl":32.94,"d":40,"q":5},"9786550471170":{"t":"Ansiedade","s":"O Fim Da Escravidão","a":"JULIANO PIMENTEL CORREA SANTOS (Autor)","g":"","p":56.9,"pl":34.14,"d":40,"q":5},"9786587885568":{"t":"Anne De Windy Poplars","s":"","a":"Lucy Maud Montgomery","g":"","p":49.9,"pl":29.94,"d":40,"q":5},"9786550471231":{"t":"A Ciencia De Ficar Rico","s":"","a":"WALLACE D WATTLES","g":"","p":49.9,"pl":29.94,"d":40,"q":5},"9786587885735":{"t":"1984","s":"","a":"GEORGE ORWELL","g":"","p":46.9,"pl":28.14,"d":40,"q":10},"9786550474294":{"t":"Vidas Secas + S. Bernardo","s":"","a":"Graciliano Ramos","g":"Gastronomia","p":69.9,"pl":41.94,"d":40,"q":10},"9786550472474":{"t":"Umbanda para iniciantes","s":"","a":"RODRIGO QUEIROZ (Autor)","g":"Gastronomia","p":52.9,"pl":31.74,"d":40,"q":10},"9786550475000":{"t":"Turma da Mônica e o Mistério dos Superpoderes Mentais","s":"","a":"WILLIAM SANCHES DE LIMA (Autor)","g":"Auto-ajuda","p":69.9,"pl":41.94,"d":40,"q":5},"9786550472689":{"t":"Projeto de vida","s":"Caminhos para uma vida que valha a pena","a":"CLOVIS DE BARROS FILHO (Autor)","g":"Auto-ajuda","p":59.9,"pl":35.94,"d":40,"q":10},"9786550476472":{"t":"Português para não pagar mico","s":"","a":"Autor","g":"Educação","p":59.9,"pl":35.94,"d":40,"q":10},"9786550475918":{"t":"Pais que educam, filhos que prosperam","s":"","a":"EDGAR ASSIS GOMES DE ABREU (Autor)","g":"Auto-ajuda","p":69.9,"pl":41.94,"d":40,"q":5},"9786550472511":{"t":"Padrões de alta performance","s":"","a":"NAPOLEON HILL","g":"Humanidades","p":59.9,"pl":35.94,"d":40,"q":10},"9786550474652":{"t":"O pequeno príncipe","s":"","a":"Antoine de Saint-Exupéry","g":"Literatura estrangeira","p":52.9,"pl":31.74,"d":40,"q":5},"9786550474553":{"t":"O Manuscrito original 365 dias","s":"As leis do triunfo e do sucesso de Napoleon Hill","a":"NAPOLEON HILL","g":"Auto-ajuda","p":89.9,"pl":53.94,"d":40,"q":5},"9786550471651":{"t":"O Livro Dos Cinco Aneis","s":"","a":"Miyamoto Musashi","g":"","p":49.9,"pl":29.94,"d":40,"q":10},"9786550474461":{"t":"O homem que comprou o tempo","s":"","a":"THIAGO NIGRO (Invalido)","g":"Auto-ajuda","p":64.9,"pl":38.94,"d":40,"q":10},"9786550475833":{"t":"Não se trata de dinheiro","s":"Trata-se de viver com propósito","a":"BOB PROCTOR","g":"Auto-ajuda","p":64.9,"pl":38.94,"d":40,"q":5},"9786550475611":{"t":"Não é sorte","s":"Como criar soluções estratégicas para problemas sem saída, tanto nos negócios como na vida pessoal","a":"Eliyahu M. Goldratt","g":"Negócios e Economia","p":69.9,"pl":41.94,"d":40,"q":5},"9786550475239":{"t":"Mais esperto que o diabo 2","s":"O plano de ação: 20+1 dias para sair da alienação","a":"NAPOLEON HILL","g":"Auto-ajuda","p":64.9,"pl":38.94,"d":40,"q":10},"9786550475338":{"t":"Machado de Assis 2 em 1: Memórias póstumas de Brás Cubas + Dom Casmurro","s":"","a":"Machado de Assis","g":"Ficção","p":69.9,"pl":41.94,"d":40,"q":10},"9786550475857":{"t":"Ilíada & Odisseia (Série Clóvis explica)","s":"Reflexões sobre as obras-primas de Homero","a":"CLOVIS DE BARROS FILHO (Autor)","g":"Filosofia","p":64.9,"pl":38.94,"d":40,"q":10},"9786550476144":{"t":"Exorcista – Os arquivos secretos","s":"Histórias reais sobre o demônio e como combatê-lo","a":"Padre Carlos Martins - Riff","g":"Religião","p":69.9,"pl":41.94,"d":40,"q":5},"9786550475406":{"t":"Entidades da umbanda","s":"Segredos revelados das forças ancestrais","a":"RODRIGO QUEIROZ (Autor)","g":"Religião","p":69.9,"pl":41.94,"d":40,"q":5},"9786550474799":{"t":"Em nome do povo","s":"Como o casamento entre Estado e moeda te deixa mais pobre","a":"BRUNO PERINI(Autor)","g":"Auto-ajuda","p":59.9,"pl":35.94,"d":40,"q":5},"9786550472412":{"t":"Como aumentar a capacidade do seu cérebro","s":"","a":"DR. JOE DISPENZA","g":"Auto-ajuda","p":79.9,"pl":47.94,"d":40,"q":10},"9786550476557":{"t":"Colorindo com Romero Britto","s":"","a":"ART 800 LLC (Romero Britto)","g":"Infanto-juvenil","p":49.9,"pl":29.94,"d":40,"q":5},"9786550472009":{"t":"Castelo Interior: ou moradas","s":"","a":"Santa Tereza D Avila","g":"Auto-ajuda","p":59.9,"pl":35.94,"d":40,"q":5},"9786550474539":{"t":"Cabeça de campeão","s":"Adote o mapa mental dos campeões e entenda a psicologia por trás dos resultados de alta performance","a":"François Ducasse","g":"Auto-ajuda","p":59.9,"pl":35.94,"d":40,"q":10},"9786550471774":{"t":"As margens do Ipiranga","s":"A viagem da Independência — a jornada de d. Pedro, do Rio de Janeiro a São Paulo, em agosto e setemb","a":"RODRIGO TRESPACH","g":"Saúde, esporte e lazer","p":56.9,"pl":34.14,"d":40,"q":10},"9786550472429":{"t":"Apaixone-se pelo problema, não pela solução","s":"","a":"Uri Levine","g":"Auto-ajuda","p":76.9,"pl":46.14,"d":40,"q":10},"9786550476533":{"t":"Ao meu redor","s":"","a":"ANDRE VIANCO PRODUÇOES ","g":"Literatura nacional","p":69.9,"pl":41.94,"d":40,"q":10},"9786550472320":{"t":"A Noite Maldita","s":"","a":"ANDRE VIANCO PRODUÇOES ","g":"Saúde, esporte e lazer","p":74.9,"pl":44.94,"d":40,"q":5},"9786550474614":{"t":"A meta","s":"Um processo de melhoria contínua (Edição comemorativa de 40 anos)","a":"Eliyahu M. Goldratt","g":"Negócios e Economia","p":74.9,"pl":44.94,"d":40,"q":10},"9786550472337":{"t":"À deriva","s":"","a":"ANDRE VIANCO PRODUÇOES ","g":"Saúde, esporte e lazer","p":69.9,"pl":41.94,"d":40,"q":5},"9786550471903":{"t":"A Bruxa Tereza","s":"","a":"ANDRE VIANCO PRODUÇOES ","g":"Saúde, esporte e lazer","p":56.9,"pl":34.14,"d":40,"q":5},"9786550472665":{"t":"1824","s":"","a":"RODRIGO TRESPACH","g":"Gastronomia","p":64.9,"pl":38.94,"d":40,"q":10},"9786550472672":{"t":"18 princípios para você evoluir","s":"","a":"CHARLES DAVID MENDLOWICZ MAULLER (Autor)","g":"Auto-ajuda","p":59.9,"pl":35.94,"d":40,"q":10},"9786550477424":{"t":"O trabalho devolve","s":"15 minutos diários de sabedoria para mudar sua vida","a":"JOEL JOTA (Autor)","g":"Auto-ajuda","p":89.9,"pl":53.94,"d":40,"q":10},"9786550478216":{"t":"O simples vence","s":"Foco e o que não fazer se você quiser ser um empreendedor de sucesso","a":"Uri Levine","g":"Auto-ajuda","p":64.9,"pl":38.94,"d":40,"q":10},"9786550477950":{"t":"O império ameaçado","s":"","a":"Marcos Valer (Autor)","g":"Literatura nacional","p":79.9,"pl":47.94,"d":40,"q":15},"9786550478278":{"t":"O fim do sofrimento emocional","s":"Para quem cansou de fingir que está tudo bem e quer começar a se curar de verdade","a":"WILLIAM SANCHES DE LIMA (Autor)","g":"Auto-ajuda","p":69.9,"pl":41.94,"d":40,"q":20},"9786550476205":{"t":"O coração ensinável","s":"Uma jornada de transformação interior para crescer na vida e nos negócios","a":"João Kepler Braga (Autor)","g":"Auto-ajuda","p":69.9,"pl":41.94,"d":40,"q":10},"9786550477110":{"t":"O apagamento","s":"","a":"Eslen Delanogare (Autora)","g":"Ficção","p":74.9,"pl":44.94,"d":40,"q":5},"9786550478650":{"t":"Noites brancas","s":"","a":"Temporalis","g":"Literatura estrangeira","p":49.9,"pl":29.94,"d":40,"q":50},"9786550477851":{"t":"Mentalidade de alto nível","s":"Pense grande sempre","a":"VINICIUS CASTILHOS IRACET ","g":"Auto-ajuda","p":69.9,"pl":41.94,"d":40,"q":10},"9786550477639":{"t":"Inteligência pragmática","s":"A habilidade humana que a IA nunca substituirá - Como transformar objetivos em realidade","a":"Maximilian Rivera Peters (Autor)","g":"Auto-ajuda","p":89.9,"pl":53.94,"d":40,"q":10},"9786550478674":{"t":"Hotel Cativeiro","s":"","a":"Vanessa Mendes Lima Dioguardi (Autora)","g":"Literatura nacional","p":74.9,"pl":44.94,"d":40,"q":20},"9786550476878":{"t":"Happy hour é na segunda","s":"Porque na sexta fica tarde demais","a":"CLOVIS DE BARROS FILHO (Autor)","g":"Auto-ajuda","p":69.9,"pl":41.94,"d":40,"q":5},"9786550478612":{"t":"Fé e esperança para cada dia (2027)","s":"Reflexões diárias para inspirar sua jornada espiritual","a":"TIKVAH TREINAMENTO E CONSULTORIA (Flavio Valvassoura) Autor","g":"Religião","p":84.9,"pl":50.94,"d":40,"q":20},"9786550477134":{"t":"Café do Chico não costuma faiá!","s":"","a":"JULIANO MATEUS POZATI (autor)","g":"Auto-ajuda","p":89.9,"pl":53.94,"d":40,"q":5},"9786550477615":{"t":"Café com Jesus 3","s":"Com a bênção de Deus Pai para uma nova estação","a":"VINICIUS CASTILHOS IRACET ","g":"Religião","p":89.9,"pl":53.94,"d":40,"q":5},"9786550477462":{"t":"Barbacena","s":"Mistérios, segredos e conspirações a bordo do navio de guerra mais temido dos mares","a":"Vice-Almirante J.C.G. Caminha","g":"Auto-ajuda","p":69.9,"pl":41.94,"d":40,"q":5},"9786550477349":{"t":"As regras do fluxo de Goldratt","s":"Os princípios de gestão de negócios do mega-seller","a":"Efrat Goldratt-Ashlag (Autor)","g":"Negócios e Economia","p":64.9,"pl":38.94,"d":40,"q":10},"9786550477752":{"t":"ARCA","s":"A filosofia de investimentos que bateu o mercado sem tentar prever o futuro","a":"THIAGO LOKTUS NIGRO (Autor)","g":"Auto-ajuda","p":69.9,"pl":41.94,"d":40,"q":20},"9786550478636":{"t":"A metamorfose","s":"","a":"Temporalis","g":"Literatura estrangeira","p":49.9,"pl":29.94,"d":40,"q":50},"9786550478377":{"t":"1826","s":"A história dos primeiros imigrantes alemães no Litoral Norte gaúcho, a caravana pioneira, a comunida","a":"RODRIGO TRESPACH","g":"História","p":79.9,"pl":47.94,"d":40,"q":20}};
+
+// --- Persistência do arquivo de remessa enviado pelo usuário (localStorage) ---
+const REMESSA_STORAGE_KEY = 'consultaPreco_remessaCustom';
+
+function loadCustomRemessa(){
+  try{
+    const raw = localStorage.getItem(REMESSA_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(err){
+    return null;
+  }
+}
+
+function saveCustomRemessa(fileName, catalogo){
+  try{
+    localStorage.setItem(REMESSA_STORAGE_KEY, JSON.stringify({ fileName, catalogo, savedAt: Date.now() }));
+    return true;
+  }catch(err){
+    return false;
+  }
+}
+
+function clearCustomRemessa(){
+  localStorage.removeItem(REMESSA_STORAGE_KEY);
+}
+
+// Converte o JSON de remessa (formato "remessa: [{ itens: [{ produto, qtde, ... }] }]")
+// no formato compacto usado pelo app: { codigoBarras: {t,s,a,g,p,pl,d,q} }
+function remessaJsonToCatalogo(data){
+  const catalogo = {};
+  const notas = Array.isArray(data.remessa) ? data.remessa : (data.remessa ? [data.remessa] : []);
+  notas.forEach(nota => {
+    (nota.itens || []).forEach(item => {
+      const p = item.produto || {};
+      const codigo = String(p.codigoBarras || p.codigoIsbn || p.codigoOriginal || '').trim();
+      if(!codigo) return;
+      const qtde = Number(item.qtde) || 0;
+      if(catalogo[codigo]){
+        catalogo[codigo].q += qtde; // mesmo código em mais de um item/nota: soma o estoque
+      }else{
+        catalogo[codigo] = {
+          t: p.titulo || '',
+          s: p.subtitulo || '',
+          a: p.autorNome || '',
+          g: p.generoDesc || '',
+          p: Number(p.preco) || Number(item.valorUnitario) || 0,
+          pl: Number(item.valorUnitarioLiquido) || Number(p.preco) || 0,
+          d: Number(item.percDesconto) || 0,
+          q: qtde,
+          img: p.capaUrl || p.imagemUrl || p.capa || '' // opcional: URL da capa, quando a remessa trouxer
+        };
+      }
+    });
+  });
+  return catalogo;
+}
+
+let CATALOGO = CATALOGO_PADRAO;
+let CATALOGO_SOURCE = 'padrao'; // 'padrao' | 'repo' | 'manual'
+(function initCatalogo(){
+  const saved = loadCustomRemessa();
+  if(saved && saved.catalogo){ CATALOGO = saved.catalogo; CATALOGO_SOURCE = 'manual'; }
+})();
+
+// --- Descoberta automática de arquivos publicados no repositório do GitHub ---
+// Assim o app reconhece a remessa (e o guia de atendimento) mesmo que o
+// arquivo não se chame exatamente "remessa.json"/"resumos.json" — por
+// exemplo, se você mantiver o nome original com data, tipo
+// "14-09-2026_RemessaFeira.json" ou "guia_atendimento_439_titulos.json".
+
+function detectarRepoGitHubPages(){
+  try{
+    const host = location.hostname; // ex: paocomovobr.github.io
+    const owner = host.split('.')[0];
+    const repo = location.pathname.split('/').filter(Boolean)[0] || '';
+    if(host.endsWith('.github.io') && owner && repo) return { owner, repo };
+  }catch(err){ /* ignora */ }
+  return null;
+}
+// Se o site não estiver em <owner>.github.io/<repo>/ (ex: teste local), usa isso:
+const REPO_FALLBACK = { owner: 'paocomovobr', repo: 'emteste7' };
+
+// Tenta ler uma data no começo do nome do arquivo (formato DD-MM-AAAA) pra,
+// quando houver mais de um arquivo candidato, priorizar o mais recente.
+function extrairDataDoNome(nome){
+  const m = String(nome).match(/^(\d{2})-(\d{2})-(\d{4})/);
+  if(!m) return 0;
+  const [, d, mo, y] = m;
+  return new Date(`${y}-${mo}-${d}`).getTime() || 0;
+}
+
+let _listaJsonRepoCache = null;
+async function listarArquivosJsonDoRepo(){
+  if(_listaJsonRepoCache) return _listaJsonRepoCache; // 1 consulta à API por sessão é suficiente
+  try{
+    const { owner, repo } = detectarRepoGitHubPages() || REPO_FALLBACK;
+    const resp = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/`, { cache: 'no-store' });
+    if(!resp.ok) throw new Error('não deu pra listar os arquivos do repositório');
+    const arquivos = await resp.json();
+    _listaJsonRepoCache = (Array.isArray(arquivos) ? arquivos : [])
+      .filter(f => f.type === 'file' && /\.json$/i.test(f.name));
+  }catch(err){
+    _listaJsonRepoCache = [];
+  }
+  return _listaJsonRepoCache;
+}
+
+// Acha e valida um arquivo publicado no repositório, tentando nesta ordem:
+// 1) o mesmo arquivo que funcionou da última vez (evita gastar a cota da API do GitHub)
+// 2) um nome fixo, se você preferir manter esse nome (mais rápido)
+// 3) qualquer .json na raiz do repositório, do mais recente (pela data no nome) pro mais antigo,
+//    testando o conteúdo de cada um até achar um que "bate" com o validador
+async function encontrarArquivoValido({ nomeFixo, ignorarNomes, validar, cacheKey }){
+  const lerCache = () => { try{ return JSON.parse(localStorage.getItem(cacheKey) || 'null'); }catch(e){ return null; } };
+  const salvarCache = (info) => { try{ localStorage.setItem(cacheKey, JSON.stringify(info)); }catch(e){ /* ignora */ } };
+
+  const tentar = async (url, nome) => {
+    try{
+      const resp = await fetch(url, { cache: 'no-store' });
+      if(!resp.ok) return null;
+      const data = await resp.json();
+      const resultado = validar(data);
+      if(resultado){ salvarCache({ url, nome }); return { resultado, nome, url }; }
+    }catch(err){ /* tenta o próximo */ }
+    return null;
+  };
+
+  const memorizado = lerCache();
+  if(memorizado && memorizado.url){
+    const ok = await tentar(memorizado.url, memorizado.nome);
+    if(ok) return ok;
+  }
+  if(nomeFixo){
+    const ok = await tentar('./' + nomeFixo, nomeFixo);
+    if(ok) return ok;
+  }
+  const arquivos = await listarArquivosJsonDoRepo();
+  const candidatos = arquivos
+    .filter(f => !ignorarNomes.has(f.name.toLowerCase()))
+    .sort((a, b) => extrairDataDoNome(b.name) - extrairDataDoNome(a.name));
+  for(const candidato of candidatos){
+    const ok = await tentar(candidato.download_url, candidato.name);
+    if(ok) return ok;
+  }
+  return null;
+}
+
+// --- Remessa publicada no site ---
+// Pode ter qualquer nome de arquivo .json na raiz do repositório — o app acha
+// sozinho testando o conteúdo. Pra trocar preço/estoque, edite ou substitua o
+// arquivo no GitHub; pra trocar a remessa inteira, apague o antigo e suba
+// outro .json (com qualquer nome) no lugar. Upload manual pelo menu tem
+// prioridade sobre a remessa publicada no site.
+let CATALOGO_REPO_NOME = '';
+async function loadRemessaDoRepo(){
+  if(CATALOGO_SOURCE === 'manual') return;
+  const achado = await encontrarArquivoValido({
+    nomeFixo: 'remessa.json',
+    ignorarNomes: new Set(['manifest.json']),
+    validar: (data) => { const c = remessaJsonToCatalogo(data); return Object.keys(c).length ? c : null; },
+    cacheKey: 'consultaPreco_remessaUrlCache'
+  });
+  if(achado){
+    CATALOGO = achado.resultado;
+    CATALOGO_SOURCE = 'repo';
+    CATALOGO_REPO_NOME = achado.nome;
+  }else if(CATALOGO_SOURCE !== 'manual'){
+    CATALOGO_SOURCE = 'padrao';
+  }
+  updateFileStatusUI();
+}
+
+// --- Persistência do arquivo de RESUMOS enviado pelo usuário (localStorage) ---
+const RESUMOS_STORAGE_KEY = 'consultaPreco_resumosCustom';
+
+function loadCustomResumos(){
+  try{
+    const raw = localStorage.getItem(RESUMOS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(err){
+    return null;
+  }
+}
+
+function saveCustomResumos(fileName, resumos){
+  try{
+    localStorage.setItem(RESUMOS_STORAGE_KEY, JSON.stringify({ fileName, resumos, savedAt: Date.now() }));
+    return true;
+  }catch(err){
+    return false;
+  }
+}
+
+function clearCustomResumos(){
+  localStorage.removeItem(RESUMOS_STORAGE_KEY);
+}
+
+// Converte o JSON de resumos pro formato usado pelo app: { isbn: "texto do resumo" }.
+// Aceita tanto o formato simples "livros: [{ isbn, resumo }]" quanto o guia de
+// atendimento "titulos: [{ isbn, o_que_falar_para_o_cliente, do_que_se_trata }]".
+function resumosJsonToMapa(data){
+  const mapa = {};
+  const lista = Array.isArray(data.livros) ? data.livros
+    : Array.isArray(data.titulos) ? data.titulos
+    : Array.isArray(data) ? data
+    : [];
+  lista.forEach(l => {
+    const codigo = String(l.isbn || l.codigoBarras || l.codigoIsbn || '').trim();
+    const resumo = String(l.resumo || l.o_que_falar_para_o_cliente || l.do_que_se_trata || '').trim();
+    if(codigo && resumo){ mapa[codigo] = resumo; }
+  });
+  return mapa;
+}
+
+let RESUMOS_CUSTOM = {};
+let RESUMOS_SOURCE = 'nenhum'; // 'nenhum' | 'repo' | 'manual'
+let RESUMOS_REPO_NOME = '';
+(function initResumos(){
+  const saved = loadCustomResumos();
+  if(saved && saved.resumos){ RESUMOS_CUSTOM = saved.resumos; RESUMOS_SOURCE = 'manual'; }
+})();
+
+// Mesma ideia da remessa: reconhece o guia de resumos/atendimento publicado no
+// repositório mesmo com outro nome de arquivo (ex: "guia_atendimento_439_titulos.json").
+async function loadResumosDoRepo(){
+  if(RESUMOS_SOURCE === 'manual') return;
+  const achado = await encontrarArquivoValido({
+    nomeFixo: 'resumos.json',
+    ignorarNomes: new Set(['manifest.json']),
+    validar: (data) => { const m = resumosJsonToMapa(data); return Object.keys(m).length ? m : null; },
+    cacheKey: 'consultaPreco_resumosUrlCache'
+  });
+  if(achado){
+    RESUMOS_CUSTOM = achado.resultado;
+    RESUMOS_SOURCE = 'repo';
+    RESUMOS_REPO_NOME = achado.nome;
+  }
+  updateResumosStatusUI();
+}
+
+const els = {
+  status: document.getElementById('status-text'),
+  result: document.getElementById('result'),
+  manualInput: document.getElementById('manual-code'),
+  fileStatus: document.getElementById('file-status'),
+  btnRemoveFile: document.getElementById('btn-remove-file'),
+  resumosStatus: document.getElementById('resumos-status'),
+  btnRemoveResumos: document.getElementById('btn-remove-resumos'),
+  titleInput: document.getElementById('manual-title'),
+};
+
+function updateFileStatusUI(){
+  const saved = loadCustomRemessa();
+  if(saved && saved.catalogo){
+    const count = Object.keys(saved.catalogo).length;
+    els.fileStatus.innerHTML = `Arquivo carregado manualmente: <strong>${escapeHtml(saved.fileName)}</strong> — ${count} título(s). <br>(tem prioridade sobre a remessa publicada no site)`;
+    els.btnRemoveFile.style.display = '';
+  }else if(CATALOGO_SOURCE === 'repo'){
+    const count = Object.keys(CATALOGO).length;
+    els.fileStatus.innerHTML = `Remessa publicada no site: <strong>${escapeHtml(CATALOGO_REPO_NOME)}</strong> — ${count} título(s).`;
+    els.btnRemoveFile.style.display = 'none';
+  }else{
+    els.fileStatus.textContent = 'Nenhuma remessa publicada no site — usando catálogo padrão embutido.';
+    els.btnRemoveFile.style.display = 'none';
+  }
+}
+updateFileStatusUI();
+
+function updateResumosStatusUI(){
+  const saved = loadCustomResumos();
+  if(saved && saved.resumos){
+    const count = Object.keys(saved.resumos).length;
+    els.resumosStatus.innerHTML = `Arquivo carregado manualmente: <strong>${escapeHtml(saved.fileName)}</strong> — ${count} resumo(s). <br>(tem prioridade sobre o guia publicado no site)`;
+    els.btnRemoveResumos.style.display = '';
+  }else if(RESUMOS_SOURCE === 'repo'){
+    const count = Object.keys(RESUMOS_CUSTOM).length;
+    els.resumosStatus.innerHTML = `Guia publicado no site: <strong>${escapeHtml(RESUMOS_REPO_NOME)}</strong> — ${count} resumo(s).`;
+    els.btnRemoveResumos.style.display = 'none';
+  }else{
+    els.resumosStatus.textContent = 'Nenhum guia de resumos publicado — usando resumo do Google Books quando disponível.';
+    els.btnRemoveResumos.style.display = 'none';
+  }
+}
+updateResumosStatusUI();
+
+// --- Admin: a senha nunca fica salva em texto, só o hash dela (SHA-256). ---
+// Pra trocar a senha: gere um novo hash e substitua o valor de ADMIN_HASH abaixo.
+const ADMIN_HASH = "c86983d59937fd0da67af6a9652def7fc63e8eaebf8d578b3ff0ebb8bc4abe62";
+const ADMIN_STORAGE_KEY = "consultaPreco_isAdmin";
+
+async function sha256Hex(str){
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function isAdmin(){
+  // sessionStorage: some ao fechar a aba/navegador (login não fica "para sempre" no aparelho).
+  return sessionStorage.getItem(ADMIN_STORAGE_KEY) === "1";
+}
+
+function setAdmin(on){
+  if(on){ sessionStorage.setItem(ADMIN_STORAGE_KEY, "1"); }
+  else{ sessionStorage.removeItem(ADMIN_STORAGE_KEY); }
+  const btn = document.getElementById('btn-logout-admin');
+  if(btn){ btn.style.display = on ? '' : 'none'; }
+}
+
+const adminOverlay = document.getElementById('admin-overlay');
+const adminPassword = document.getElementById('admin-password');
+const adminError = document.getElementById('admin-error');
+const appContent = document.getElementById('app-content');
+
+function openAdminLogin(){
+  adminError.hidden = true;
+  adminPassword.value = '';
+  adminOverlay.hidden = false;
+  adminPassword.focus();
+}
+function closeAdminLogin(){
+  // Se o app ainda não foi desbloqueado, não tem "cancelar" pra onde ir —
+  // só limpa o campo e mantém a tela de senha.
+  if(appContent.hasAttribute('hidden')){
+    adminPassword.value = '';
+    adminPassword.focus();
+    return;
+  }
+  adminOverlay.hidden = true;
+}
+
+document.getElementById('btn-admin-cancel').addEventListener('click', closeAdminLogin);
+
+document.getElementById('btn-admin-confirm').addEventListener('click', async () => {
+  const hash = await sha256Hex(adminPassword.value);
+  if(hash === ADMIN_HASH){
+    setAdmin(true);
+    adminOverlay.hidden = true;
+    appContent.removeAttribute('hidden');
+  }else{
+    adminError.hidden = false;
+  }
+});
+adminPassword.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){ document.getElementById('btn-admin-confirm').click(); }
+});
+document.getElementById('btn-logout-admin').addEventListener('click', () => {
+  setAdmin(false);
+  menuPanel.setAttribute('hidden', '');
+  btnMenu.setAttribute('aria-expanded', 'false');
+  appContent.setAttribute('hidden', '');
+  openAdminLogin();
+});
+
+// --- Trava de acesso: o app inteiro só aparece depois da senha certa ---
+const btnMenu = document.getElementById('btn-menu');
+const menuPanel = document.getElementById('menu-panel');
+setAdmin(isAdmin()); // ajusta visibilidade do botão "Sair do modo admin"
+
+if(isAdmin()){
+  appContent.removeAttribute('hidden');
+}else{
+  openAdminLogin();
+}
+
+btnMenu.addEventListener('click', () => {
+  const isHidden = menuPanel.hasAttribute('hidden');
+  if(isHidden){
+    menuPanel.removeAttribute('hidden');
+    btnMenu.setAttribute('aria-expanded', 'true');
+  }else{
+    menuPanel.setAttribute('hidden', '');
+    btnMenu.setAttribute('aria-expanded', 'false');
+  }
+});
+
+document.getElementById('btn-load-file').addEventListener('click', () => {
+  document.getElementById('remessa-file-input').click();
+});
+
+document.getElementById('remessa-file-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+  els.status.textContent = 'Lendo arquivo de remessa…';
+  try{
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const catalogo = remessaJsonToCatalogo(data);
+    const count = Object.keys(catalogo).length;
+    if(!count){ throw new Error('Nenhum item de "remessa" encontrado nesse arquivo.'); }
+    if(!saveCustomRemessa(file.name, catalogo)){
+      throw new Error('Não deu para salvar (armazenamento cheio ou bloqueado pelo navegador).');
+    }
+    CATALOGO = catalogo;
+    updateFileStatusUI();
+    els.status.textContent = `Arquivo "${file.name}" carregado — ${count} título(s).`;
+  }catch(err){
+    els.status.textContent = `Erro ao ler o arquivo: ${err.message || 'JSON inválido'}`;
+  }
+});
+
+document.getElementById('btn-remove-file').addEventListener('click', async () => {
+  clearCustomRemessa();
+  CATALOGO = CATALOGO_PADRAO;
+  CATALOGO_SOURCE = 'padrao';
+  els.status.textContent = 'Arquivo manual removido — verificando remessa do site…';
+  await loadRemessaDoRepo();
+  const rotulo = CATALOGO_SOURCE === 'repo' ? 'remessa publicada no site' : 'catálogo padrão embutido';
+  els.status.textContent = `Arquivo manual removido — usando ${rotulo}.`;
+});
+
+document.getElementById('btn-load-resumos').addEventListener('click', () => {
+  document.getElementById('resumos-file-input').click();
+});
+
+document.getElementById('resumos-file-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if(!file) return;
+  els.status.textContent = 'Lendo arquivo de resumos…';
+  try{
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const mapa = resumosJsonToMapa(data);
+    const count = Object.keys(mapa).length;
+    if(!count){ throw new Error('Nenhum resumo válido encontrado nesse arquivo.'); }
+    if(!saveCustomResumos(file.name, mapa)){
+      throw new Error('Não deu para salvar (armazenamento cheio ou bloqueado pelo navegador).');
+    }
+    RESUMOS_CUSTOM = mapa;
+    updateResumosStatusUI();
+    els.status.textContent = `Arquivo "${file.name}" carregado — ${count} resumo(s).`;
+  }catch(err){
+    els.status.textContent = `Erro ao ler o arquivo: ${err.message || 'JSON inválido'}`;
+  }
+});
+
+document.getElementById('btn-remove-resumos').addEventListener('click', async () => {
+  clearCustomResumos();
+  RESUMOS_CUSTOM = {};
+  RESUMOS_SOURCE = 'nenhum';
+  els.status.textContent = 'Arquivo manual removido — verificando guia do site…';
+  await loadResumosDoRepo();
+  const rotulo = RESUMOS_SOURCE === 'repo' ? 'guia publicado no site' : 'resumo do Google Books';
+  els.status.textContent = `Arquivo manual removido — usando ${rotulo}.`;
+});
+
+// --- Debug: mostra o que está de fato salvo no localStorage e o catálogo em uso agora ---
+document.getElementById('btn-debug').addEventListener('click', () => {
+  const out = document.getElementById('debug-output');
+  const rawRemessa = localStorage.getItem(REMESSA_STORAGE_KEY);
+  const rawResumos = localStorage.getItem(RESUMOS_STORAGE_KEY);
+  const catalogoAtivoCount = Object.keys(CATALOGO).length;
+  const usandoPadrao = CATALOGO === CATALOGO_PADRAO;
+  let texto = '';
+  texto += 'Catálogo em uso agora: ' + (usandoPadrao ? 'PADRÃO (embutido no código)' : 'ARQUIVO CARREGADO') + '\n';
+  texto += 'Total de títulos no catálogo em uso: ' + catalogoAtivoCount + '\n\n';
+  texto += '--- localStorage (remessa) ---\n';
+  texto += rawRemessa ? rawRemessa : '(vazio)';
+  texto += '\n\n--- localStorage (resumos) ---\n';
+  texto += rawResumos ? rawResumos : '(vazio)';
+  out.textContent = texto;
+  out.style.display = 'block';
+});
+
+function formatBRL(v){
+  return v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.textContent = str == null ? '' : str;
+  return d.innerHTML;
+}
+
+function showBook(codigo, livro){
+  if(!livro){
+    els.result.innerHTML = `
+      <div class="not-found">
+        <div>Código não encontrado nesta remessa.</div>
+        <div class="code">${escapeHtml(codigo)}</div>
+      </div>`;
+    return;
+  }
+  const sub = livro.s ? `<p class="book-sub">${escapeHtml(livro.s)}</p>` : '';
+  const capa = livro.img ? escapeHtml(livro.img) : 'capa-padrao.svg';
+  els.result.innerHTML = `
+    <span class="stamp-corner">${livro.d}% OFF</span>
+    <div class="result-body">
+      <div class="result-top">
+        <img class="book-thumb" src="${capa}" alt="Capa do livro" onerror="this.onerror=null;this.src='capa-padrao.svg';">
+        <div class="result-info">
+          <p class="book-title">${escapeHtml(livro.t)}</p>
+          ${sub}
+          <p class="book-author">${escapeHtml(livro.a)}</p>
+        </div>
+      </div>
+      <div class="price-row">
+        <span class="price-old">R$ ${formatBRL(livro.p)}</span>
+        <span class="price-new">R$ ${formatBRL(livro.pl)}</span>
+        <span class="price-tag">${escapeHtml(livro.g || '')}<br>estoque remessa: ${livro.q}</span>
+      </div>
+      <div class="resumo" id="resumo-box">
+        <span class="resumo-label">Resumo</span>
+        <span id="resumo-text">Buscando resumo…</span>
+      </div>
+    </div>`;
+  fetchResumo(codigo, livro);
+}
+
+// --- Resumo breve do livro (via Google Books, usando o ISBN) ---
+async function fetchResumo(isbn, livro){
+  const box = document.getElementById('resumo-text');
+  if(!box) return;
+  if(RESUMOS_CUSTOM[isbn]){
+    box.textContent = RESUMOS_CUSTOM[isbn];
+    return;
+  }
+  try{
+    const resp = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+    if(!resp.ok) throw new Error('offline');
+    const data = await resp.json();
+    const info = data.items && data.items[0] && data.items[0].volumeInfo;
+    let desc = info && info.description;
+    if(desc){
+      desc = desc.replace(/<[^>]+>/g, ''); // remove eventual html
+      if(desc.length > 260){
+        desc = desc.slice(0, 260).replace(/\s+\S*$/, '') + '…';
+      }
+      box.textContent = desc;
+    }else{
+      box.textContent = `Sem resumo disponível — ${livro.g || 'livro'} de ${livro.a}${livro.s ? ': ' + livro.s : '.'}`;
+    }
+  }catch(err){
+    box.textContent = `Resumo indisponível sem internet — ${livro.g || 'livro'} de ${livro.a}${livro.s ? ': ' + livro.s : '.'}`;
+  }
+}
+
+function lookup(rawCode){
+  const codigo = (rawCode || '').trim().replace(/\D/g, '');
+  if(!codigo){ return; }
+  const livro = CATALOGO[codigo];
+  showBook(codigo, livro);
+  if(navigator.vibrate){ navigator.vibrate(60); }
+}
+
+// --- Busca por nome do livro ---
+// Compara sem acento/maiúsculas e exige que TODAS as palavras digitadas
+// apareçam em algum lugar (título, subtítulo ou autor) — assim "napoleon
+// esperto" acha "Mais Esperto que o Diabo" de Napoleon Hill mesmo fora de ordem.
+function normalizarTexto(s){
+  return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+function searchByTitle(rawQuery){
+  const query = (rawQuery || '').trim();
+  if(!query){ return; }
+  const termos = normalizarTexto(query).split(/\s+/).filter(Boolean);
+  const matches = Object.entries(CATALOGO).filter(([codigo, livro]) => {
+    const alvo = normalizarTexto(`${livro.t || ''} ${livro.s || ''} ${livro.a || ''}`);
+    return termos.every(t => alvo.includes(t));
+  });
+  renderTitleResults(query, matches);
+  if(navigator.vibrate){ navigator.vibrate(60); }
+}
+function renderTitleResults(query, matches){
+  if(!matches.length){
+    els.result.innerHTML = `
+      <div class="not-found">
+        <div>Nenhum título encontrado para "${escapeHtml(query)}".</div>
+      </div>`;
+    return;
+  }
+  if(matches.length === 1){
+    const [codigo, livro] = matches[0];
+    showBook(codigo, livro);
+    return;
+  }
+  const LIMITE = 30;
+  const itens = matches.slice(0, LIMITE).map(([codigo, livro]) => {
+    const capa = livro.img ? escapeHtml(livro.img) : 'capa-padrao.svg';
+    return `
+      <button class="search-item" data-codigo="${escapeHtml(codigo)}">
+        <img class="book-thumb" src="${capa}" alt="" onerror="this.onerror=null;this.src='capa-padrao.svg';">
+        <div class="si-info">
+          <p class="si-title">${escapeHtml(livro.t)}</p>
+          <p class="si-author">${escapeHtml(livro.a || '')}</p>
+        </div>
+        <span class="si-price">R$ ${formatBRL(livro.pl)}</span>
+      </button>`;
+  }).join('');
+  const aviso = matches.length > LIMITE
+    ? `<div class="hint">Mostrando ${LIMITE} de ${matches.length} resultados — refine a busca.</div>`
+    : `<div class="hint">${matches.length} resultados — toque num título.</div>`;
+  els.result.innerHTML = `<div class="title-results">${aviso}${itens}</div>`;
+  els.result.querySelectorAll('.search-item').forEach(btn => {
+    btn.addEventListener('click', () => lookup(btn.dataset.codigo));
+  });
+}
+document.getElementById('btn-search-title').addEventListener('click', () => {
+  searchByTitle(els.titleInput.value);
+});
+els.titleInput.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){ searchByTitle(els.titleInput.value); }
+});
+let titleSearchDebounce = null;
+els.titleInput.addEventListener('input', () => {
+  clearTimeout(titleSearchDebounce);
+  const val = els.titleInput.value;
+  if(val.trim().length < 2) return; // espera pelo menos 2 letras pra não listar tudo
+  titleSearchDebounce = setTimeout(() => searchByTitle(val), 250);
+});
+
+// --- Leitura manual ---
+document.getElementById('btn-manual').addEventListener('click', () => {
+  lookup(els.manualInput.value);
+});
+els.manualInput.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){ lookup(els.manualInput.value); }
+});
+
+// Busca a remessa e o guia de resumos publicados no site assim que a página
+// abre.
+loadRemessaDoRepo();
+loadResumosDoRepo();
+
+// Busca a remessa e o guia de resumos publicados no site assim que a página
+// abre — não bloqueia a câmera, tudo acontece em paralelo.
+loadRemessaDoRepo();
+loadResumosDoRepo();
+
+
+// --- PWA: registra o service worker (cache offline + instalação na tela inicial) ---
+if('serviceWorker' in navigator){
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
